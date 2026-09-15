@@ -73,7 +73,7 @@ private fun AreaList(
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
-        items(areas, key = { it.name }) { area ->
+        items(areas, key = { area -> "${area.name}:${area.country.orEmpty()}" }) { area ->
             AreaCard(area = area, onClick = { onAreaClick(area.name) })
         }
     }
