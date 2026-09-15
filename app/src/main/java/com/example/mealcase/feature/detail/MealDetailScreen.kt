@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import coil.compose.AsyncImage
 import com.example.mealcase.R
 import com.example.mealcase.app.di.ViewModelFactories
 import com.example.mealcase.core.model.Ingredient

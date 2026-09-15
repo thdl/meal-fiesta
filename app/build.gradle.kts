@@ -1,24 +1,18 @@
-@file:OptIn(
-    org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class,
-    org.jetbrains.kotlin.buildtools.api.ExperimentalBuildToolsApi::class,
-)
-
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.example.mealcase"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.mealcase"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -32,22 +26,16 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = false
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-}
-
-kotlin {
-    // AGP 9 has built-in Kotlin support and bundles KGP 2.2.10. The AndroidX, Coil and OkHttp
-    // versions used here ship Kotlin 2.4 metadata, so the compiler is raised to match.
-    compilerVersion = "2.4.10"
-    jvmToolchain(17)
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
@@ -71,7 +59,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.coil.compose)
-    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
