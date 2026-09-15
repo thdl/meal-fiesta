@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">MealCase</string>
+
+    <string name="areas_title">Utforsk kjøkken</string>
+    <string name="areas_subtitle">Velg et land for å se rettene TheMealDB har registrert.</string>
+
+    <string name="status_loading">Henter …</string>
+    <string name="action_retry">Prøv igjen</string>
+    <string name="action_back">Tilbake</string>
+
+    <string name="meals_empty">TheMealDB har ingen retter registrert for %1$s ennå. Prøv et annet kjøkken.</string>
+
+    <string name="detail_ingredients">Ingredienser</string>
+    <string name="detail_instructions">Fremgangsmåte</string>
+    <string name="detail_no_instructions">Ingen fremgangsmåte oppgitt for denne retten.</string>
+
+    <string name="error_network">Fikk ikke kontakt med nettverket. Sjekk tilkoblingen og prøv igjen.</string>
+    <string name="error_server">Noe gikk galt hos TheMealDB. Prøv igjen om litt.</string>
+    <string name="error_invalid_response">Svaret fra TheMealDB var ikke som forventet.</string>
+    <string name="error_not_found">Fant ikke denne retten.</string>
+    <string name="error_unknown">Noe uventet gikk galt.</string>
+</resources>

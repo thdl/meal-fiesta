@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.MealCase" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
