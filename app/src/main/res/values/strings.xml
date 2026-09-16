@@ -1,22 +1,25 @@
 <resources>
     <string name="app_name">MealCase</string>
 
-    <string name="areas_title">Utforsk kjøkken</string>
-    <string name="areas_subtitle">Velg et land for å se rettene TheMealDB har registrert.</string>
+    <string name="areas_title">Explore cuisines</string>
+    <string name="areas_subtitle">Choose a cuisine to see its meals on TheMealDB.</string>
+    <string name="areas_partial">Some cuisines could not be checked. This list may be incomplete.</string>
 
-    <string name="status_loading">Henter …</string>
-    <string name="action_retry">Prøv igjen</string>
-    <string name="action_back">Tilbake</string>
+    <string name="status_loading">Loading…</string>
+    <string name="meals_nav_label">Cuisine</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_back">Back</string>
 
-    <string name="meals_empty">TheMealDB har ingen retter registrert for %1$s ennå. Prøv et annet kjøkken.</string>
+    <string name="meals_empty">TheMealDB has no meals listed for %1$s yet. Try another cuisine.</string>
 
-    <string name="detail_ingredients">Ingredienser</string>
-    <string name="detail_instructions">Fremgangsmåte</string>
-    <string name="detail_no_instructions">Ingen fremgangsmåte oppgitt for denne retten.</string>
+    <string name="detail_ingredients">Ingredients</string>
+    <string name="detail_instructions">Instructions</string>
+    <string name="detail_no_instructions">No instructions are available for this meal.</string>
+    <string name="detail_no_ingredients">No ingredients are listed for this meal.</string>
 
-    <string name="error_network">Fikk ikke kontakt med nettverket. Sjekk tilkoblingen og prøv igjen.</string>
-    <string name="error_server">Noe gikk galt hos TheMealDB. Prøv igjen om litt.</string>
-    <string name="error_invalid_response">Svaret fra TheMealDB var ikke som forventet.</string>
-    <string name="error_not_found">Fant ikke denne retten.</string>
-    <string name="error_unknown">Noe uventet gikk galt.</string>
+    <string name="error_network">Could not connect. Check your internet connection and try again.</string>
+    <string name="error_server">Something went wrong with TheMealDB. Please try again later.</string>
+    <string name="error_invalid_response">TheMealDB returned an unexpected response.</string>
+    <string name="error_not_found">This meal could not be found.</string>
+    <string name="error_unknown">Something unexpected went wrong.</string>
 </resources>
