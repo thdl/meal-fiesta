@@ -1,37 +1,39 @@
 # MealCase
 
-En liten Android-app som utforsker [TheMealDB](https://www.themealdb.com/api.php) over tre
-skjermer: **kjøkken → retter → detaljer**. Skrevet som case-oppgave til Giant Leap Technologies.
+A small Android app for exploring [TheMealDB](https://www.themealdb.com/api.php) across three
+screens: **cuisines → meals → details**. Built as a case assignment for Giant Leap Technologies.
 
 ```
-AreaScreen            MealListScreen              MealDetailScreen
-(195 kjøkken)   →     (retter for ett kjøkken)  →  (bilde, ingredienser, fremgangsmåte)
+AreaScreen                  MealListScreen              MealDetailScreen
+(cuisines with meals)   →   (meals for a cuisine)   →   (image, ingredients, instructions)
 ```
 
-## Kjøring
+## Run
 
 ```bash
 ./gradlew :app:assembleDebug
 ./gradlew :app:testDebugUnitTest
+./gradlew :app:connectedDebugAndroidTest # requires an emulator or connected device
 ```
 
-Ingen API-nøkkel å sette opp — TheMealDB sin åpne testnøkkel (`1`) ligger i basis-URL-en.
-Krever Android SDK 37 og JDK 17+ (Gradle henter riktig toolchain selv).
+No API key setup is needed: TheMealDB's public test key (`1`) is included in the base URL.
+The project uses Android SDK 36 and requires a JDK compatible with the Android Gradle plugin;
+source and target compatibility are set to Java 17.
 
-## Arkitektur
+## Architecture
 
-MVVM med et tynt domenelag. Én Gradle-modul.
+MVVM with a thin domain layer in one Gradle module.
 
 ```
 Compose  →  ViewModel  →  Repository   →  Retrofit  →  TheMealDB
- (tekst)     (UiState)    (AppResult,
-                          DTO→domene)
+ (UI)       (UiState)     (AppResult,
+                          DTO→domain)
 ```
 
-DTO-ene stopper på repository-grensen — ViewModel og UI kjenner bare domenemodellene.
+DTOs stop at the repository boundary. ViewModels and UI use domain models only.
 
-Pakkene er organisert etter *feature*, ikke etter lag, slik at grensene ligner moduler man
-senere kan trekke ut:
+Packages are grouped by feature and shared responsibilities, keeping the boundaries clear if
+the project is split into modules later:
 
 ```
 core/     model · network · data · common · ui
@@ -39,80 +41,96 @@ feature/  areas · meals · detail
 app/      navigation · di
 ```
 
-| Bibliotek | Til hva |
+| Library | Purpose |
 |---|---|
 | Jetpack Compose + Material 3 | UI |
-| Navigation Compose | Type-sikre ruter (`@Serializable`) |
-| Retrofit + kotlinx.serialization | Nettverk og parsing |
-| OkHttp | HTTP-klient, logging kun i debug |
-| Coil 3 | Bildelasting |
+| Navigation Compose | Type-safe routes (`@Serializable`) |
+| Retrofit + kotlinx.serialization | Networking and parsing |
+| OkHttp | HTTP client; logging in debug builds only |
+| Coil 2 | Image loading |
 
-## Sentrale avveininger
+## Design decisions
 
-**MVVM uten UseCase-lag.** Et use-case-lag tjener til noe når operasjoner kombinerer flere
-repositories, håndhever forretningsregler eller gjenbrukes. Her ville hver UseCase vært en
-ren gjennomstikk-klasse rundt ett repository-kall, så de er utelatt med vilje.
+**MVVM without a UseCase layer.** Use cases help when operations combine repositories,
+enforce business rules, or are reused. Here, they would mostly forward one repository call,
+so they are intentionally omitted.
 
-**Manuell DI.** `AppContainer` bygger objektgrafen med `by lazy`, og ViewModels får
-avhengighetene sine gjennom `viewModelFactory`. Rundt 30 linjer, ingen kodegenerering.
-Sømmen mot Hilt er intakt — ViewModels tar imot et `MealRepository`, ikke en container — så
-byttet er billig den dagen appen vokser.
+**Manual dependency injection.** `AppContainer` builds the object graph, and ViewModels
+receive dependencies through factories. ViewModels depend on `MealRepository`, not on the
+container, so replacing the wiring later would not require changing their logic.
 
-**Egen `AppResult`, ikke Kotlins `Result`.** `Result.failure` tar kun `Throwable`, og å la
-`AppError` arve `Throwable` bare for å passe inn ville bøyd domenemodellen etter en
-bibliotek-detalj. `AppResult` bærer en typet `AppError` i stedet.
+**A typed `AppResult` instead of Kotlin's `Result`.** `Result.failure` accepts only a
+`Throwable`. Making `AppError` a throwable just to fit that API would distort the domain
+model; `AppResult` carries a typed error instead.
 
-**Feil er typer, ikke tekst.** ViewModel-ene kjenner ingen strenger. `AppError` oversettes
-til tekst ett sted — i Compose-laget, via `stringResource` — som er det som gjør appen
-oversettbar uten å røre logikken.
+**Errors are types, not strings.** ViewModels do not know about localized text. Compose maps
+`AppError` to a string resource, keeping presentation text out of the logic.
 
-**Cancellation svelges aldri.** `apiCall()` kaster `CancellationException` videre før den
-fanger noe annet. `runCatching` ville fanget den, og en skjerm man forlater midt i en
-henting ville da blinket en feilmelding på vei ut.
+**Cancellation is never swallowed.** `apiCall()` rethrows `CancellationException` before
+handling other failures. A request cancelled when leaving a screen must not turn into an
+error state.
 
-**Tre ulike betydninger av `null`.** Alle endepunktene svarer `{"meals": null}` når de ikke
-har noe, men det betyr ikke det samme:
+**Three different meanings of `null`.** The API may return `{"meals": null}`, but the
+meaning depends on the endpoint:
 
-| Kall | `meals: null` betyr |
+| Request | Meaning of `meals: null` |
 |---|---|
-| `list.php?a=list` | Ødelagt svar — kjøkkenlista er aldri tom |
-| `filter.php?a=X` | Ekte tomt resultat → `UiState.Empty` |
-| `lookup.php?i=X` | Retten finnes ikke → `AppError.NotFound` |
+| `list.php?a=list` | Invalid response: the cuisine list is required |
+| `filter.php?a=X` | Legitimately empty result → `UiState.Empty` |
+| `lookup.php?i=X` | Meal not found → `AppError.NotFound` |
 
-Én felles nullable-mapping ville latt et ødelagt svar se ut som legitimt tomt innhold.
+The `meals` field must be present in the JSON response. A missing field is invalid, not an
+empty list.
 
-**Delt `UiState` er en forenkling.** Bare `MealListScreen` har en ekte `Empty`-tilstand; de
-to andre behandler manglende data som feil. Én lesbar type slår tre nesten like for tre
-skjermer, men delt UI er holdt bevisst smalt: `StatusContent` rendrer spinner, feil og tom
-tilstand, og eier ikke skjermenes layout.
+**Show only cuisines with meals.** TheMealDB has no single endpoint for this. The repository
+loads the cuisine list, removes exact duplicates, then checks `search.php?f=` for letters
+`a`–`z` to identify countries with meals, with at most four requests in flight. Querying
+every cuisine separately hit the API's rate limit. If one or more letter requests fail,
+confirmed cuisines remain visible with an incomplete-results warning and a **Try again**
+button. If no cuisines can be confirmed, the screen shows a retryable error instead of a
+non-retryable empty state. Only a complete, nonempty discovery result is cached in memory
+for the app process lifetime; partial and empty results are never cached.
 
-## Tester
+**Cuisine labels and API queries can differ.** The list may display `Afghan`, while meals
+are indexed by `Afghanistan`. Navigation carries both the display name and country: the
+title remains `Afghan`, while `filter.php` receives `Afghanistan`. If the API provides no
+country, the cuisine name is used.
 
-20 enhetstester, alle på JVM (`./gradlew :app:testDebugUnitTest`).
+**Shared `UiState` is a simplification.** A meal list can be genuinely empty; an unusable
+cuisine discovery is a retryable error; and a missing detail is `NotFound`. A shared state
+type is simpler than three nearly identical ones, while the shared status UI is limited to
+loading, errors, and empty content rather than owning each screen's layout.
 
-- **`MealMappersTest`** — TheMealDB leverer ingredienser denormalisert som
-  `strIngredient1..20` + `strMeasure1..20`, padet med tomme felter. Sammenslåingen til én
-  liste er den eneste ekte logikken i appen, og testes mot et lagret, ekte API-svar.
-  Assertene går på oppførsel (antall, paring, forkasting), ikke på en kopiert liste med
-  ingrediensnavn, slik at testen overlever at oppskriften endres hos TheMealDB.
-- **`ApiCallTest`** — at cancellation kastes videre, og at `IOException`, `HttpException` og
-  `SerializationException` blir riktig `AppError`.
-- **`DefaultMealRepositoryTest`** — låser fast de tre `null`-kontraktene over.
-- **ViewModel-tester** — `Loading → Success`, `Loading → Error`, `Loading → Empty`, at retry
-  setter `Loading` synkront, og at en kansellert henting aldri ender som feiltilstand.
+## Tests
 
-## Kjente begrensninger
+30 JVM unit tests (`./gradlew :app:testDebugUnitTest`) and three instrumented UI tests
+(`./gradlew :app:connectedDebugAndroidTest`).
 
-- **Omtrent 166 av de 195 kjøkkenene er tomme.** TheMealDB lister alle land, men har retter
-  for bare ~29 av dem. Lista hentes dynamisk uansett, og tomme kjøkken får en egen tom
-  tilstand framfor en blank skjerm. Å hardkode en liste over de 29 som virker ville skjult
-  hvordan API-et faktisk oppfører seg.
-- **Ingen caching eller offline-støtte.** Hver skjerm henter på nytt; ingenting lagres.
-- **Ingen «stale-while-refreshing».** En ny henting bytter til spinner framfor å beholde
-  forrige innhold. Det er også derfor `StatusContent` er holdt smal.
-- **Ingen paginering eller søk.** Kjøkkenlista er lang å scrolle; et lokalt filtreringsfelt
-  ville vært det første jeg la til.
-- **Ingen UI-tester.** Logikken er dekket av enhetstester; navigasjon og rendering er
-  verifisert manuelt.
-- **Ingen flagg-emoji.** API-et returnerer `Italian`/`Italy`, ikke ISO-koder, så en mapping
-  for ~195 navn ville kostet mer enn den smaker. Landsnavnet vises som undertekst i stedet.
+- **`MealMappersTest`** covers the API's denormalized `strIngredient1..20` and
+  `strMeasure1..20` fields using a saved real response. Assertions focus on pairing and
+  discarding empty values, not on recipe content that the API may change.
+- **`ApiCallTest`** checks that cancellation propagates and that `IOException`,
+  `HttpException`, and `SerializationException` map to the appropriate `AppError`.
+- **`DefaultMealRepositoryTest`** covers the three `null` contracts, filtering,
+  deduplication, caching of complete results, and retry after partial or empty discovery.
+- **ViewModel tests** cover loading, success, error, and empty states, synchronous retry
+  loading, and cancellation behavior.
+- **`AppNavigationTest`** rapidly taps Back from the meal list and details, and verifies
+  the incomplete-results warning and retry flow on the cuisine screen.
+
+## Known limitations
+
+- **Discovery requires multiple API calls on a fresh launch.** Hiding empty cuisines takes
+  26 first-letter lookups. Meals whose names do not start with `a`–`z` may be missed by
+  this availability check.
+- **No offline support or general-purpose cache.** Only a complete, nonempty cuisine
+  discovery is cached in memory. Partial results, meal lists, and details are fetched
+  again; after process death, cuisine discovery runs again.
+- **No stale-while-refreshing.** A new request shows a loading indicator rather than
+  keeping the previous content visible.
+- **No pagination or search.** The cuisine list can be long to scroll; local filtering
+  would be a useful next addition.
+- **Limited UI test coverage.** Rapid Back taps are covered on an emulator, but layouts
+  on different screen sizes and TalkBack still need manual QA.
+- **No flag emoji.** The API returns names such as `Italian` and `Italy`, not ISO codes;
+  the list therefore displays cuisine names without flags.
