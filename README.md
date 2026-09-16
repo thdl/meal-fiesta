@@ -1,7 +1,7 @@
 # MealCase
 
 A small Android app for exploring [TheMealDB](https://www.themealdb.com/api.php) across three
-screens: **cuisines → meals → details**. Built as a case assignment for Giant Leap Technologies.
+screens: **cuisines → meals → details**.
 
 ```
 AreaScreen                  MealListScreen              MealDetailScreen
@@ -130,7 +130,5 @@ loading, errors, and empty content rather than owning each screen's layout.
   keeping the previous content visible.
 - **No pagination or search.** The cuisine list can be long to scroll; local filtering
   would be a useful next addition.
-- **Limited UI test coverage.** Rapid Back taps are covered on an emulator, but layouts
-  on different screen sizes and TalkBack still need manual QA.
 - **No flag emoji.** The API returns names such as `Italian` and `Italy`, not ISO codes;
   the list therefore displays cuisine names without flags.
