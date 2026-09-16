@@ -10,12 +10,19 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class MealsResponse<T>(
-    val meals: List<T>? = null,
+    val meals: List<T>?,
 )
 
 @Serializable
 data class AreaDto(
     @SerialName("strArea") val area: String,
+    @SerialName("strCountry") val country: String? = null,
+)
+
+/** Only the area identity is needed when discovering which cuisines have meals. */
+@Serializable
+data class MealAreaDto(
+    @SerialName("strArea") val area: String? = null,
     @SerialName("strCountry") val country: String? = null,
 )
 

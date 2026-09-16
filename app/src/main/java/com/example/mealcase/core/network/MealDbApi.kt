@@ -5,11 +5,15 @@ import retrofit2.http.Query
 
 interface MealDbApi {
 
-    /** All cuisines. Note: most of these have no meals attached — see [filterByArea]. */
+    /** All cuisines, paired with the country name used by [filterByArea]. */
     @GET("list.php?a=list")
     suspend fun listAreas(): MealsResponse<AreaDto>
 
-    /** Meals for one cuisine. Returns `{"meals": null}` for the majority of areas. */
+    /** Each initial returns meals with their area/country, avoiding one call per cuisine. */
+    @GET("search.php")
+    suspend fun searchByFirstLetter(@Query("f") letter: String): MealsResponse<MealAreaDto>
+
+    /** Meals for one country or cuisine. Returns `{"meals": null}` when none are known. */
     @GET("filter.php")
     suspend fun filterByArea(@Query("a") area: String): MealsResponse<MealSummaryDto>
 

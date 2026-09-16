@@ -3,6 +3,9 @@ package com.example.mealcase.core.common
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import com.example.mealcase.core.network.MealSummaryDto
+import com.example.mealcase.core.network.MealsResponse
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -49,6 +52,15 @@ class ApiCallTest {
     @Test
     fun `maps an unparseable body to InvalidResponse`() = runTest {
         val result = apiCall { throw SerializationException("unexpected shape") }
+
+        assertEquals(AppResult.Failure(AppError.InvalidResponse), result)
+    }
+
+    @Test
+    fun `missing meals field is invalid rather than an empty result`() = runTest {
+        val result = apiCall {
+            Json.decodeFromString<MealsResponse<MealSummaryDto>>("{}")
+        }
 
         assertEquals(AppResult.Failure(AppError.InvalidResponse), result)
     }

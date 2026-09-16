@@ -6,6 +6,12 @@ data class Area(
     val country: String?,
 )
 
+/** A usable cuisine list; partial discovery must remain visible and retryable. */
+data class AreaDiscovery(
+    val areas: List<Area>,
+    val isPartial: Boolean,
+)
+
 /** What `filter.php` gives us — enough for a list row, not enough for a detail screen. */
 data class MealSummary(
     val id: String,

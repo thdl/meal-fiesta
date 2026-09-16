@@ -4,11 +4,13 @@ import com.example.mealcase.core.common.AppError
 import com.example.mealcase.core.common.AppResult
 import com.example.mealcase.core.data.MealRepository
 import com.example.mealcase.core.model.Area
+import com.example.mealcase.core.model.AreaDiscovery
 import com.example.mealcase.core.model.MealDetail
 import com.example.mealcase.core.model.MealSummary
 import com.example.mealcase.core.ui.UiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -25,6 +27,7 @@ import org.junit.Test
  * `advanceUntilIdle`, which is what lets these tests actually observe Loading *before* the
  * answer arrives. Unconfined runs everything eagerly and makes that step invisible.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class AreaViewModelTest {
 
     private val dispatcher = StandardTestDispatcher()
@@ -36,9 +39,9 @@ class AreaViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private class FakeRepository(
-        private val areas: () -> AppResult<List<Area>>,
+        private val areas: () -> AppResult<AreaDiscovery>,
     ) : MealRepository {
-        override suspend fun getAreas(): AppResult<List<Area>> = areas()
+        override suspend fun getAreas(): AppResult<AreaDiscovery> = areas()
         override suspend fun getMeals(area: String): AppResult<List<MealSummary>> =
             AppResult.Success(emptyList())
         override suspend fun getMealDetail(id: String): AppResult<MealDetail> =
@@ -47,7 +50,7 @@ class AreaViewModelTest {
 
     @Test
     fun `starts loading and then shows the areas`() = runTest {
-        val areas = listOf(Area(name = "Italian", country = "Italy"))
+        val areas = AreaDiscovery(listOf(Area(name = "Italian", country = "Italy")), false)
         val viewModel = AreaViewModel(FakeRepository { AppResult.Success(areas) })
 
         assertEquals(UiState.Loading, viewModel.uiState.value)
@@ -71,6 +74,15 @@ class AreaViewModelTest {
     }
 
     @Test
+    fun `an unusable empty discovery remains retryable`() = runTest {
+        val viewModel = AreaViewModel(FakeRepository { AppResult.Success(AreaDiscovery(emptyList(), false)) })
+
+        advanceUntilIdle()
+
+        assertEquals(UiState.Error(AppError.Server), viewModel.uiState.value)
+    }
+
+    @Test
     fun `a cancelled load never becomes an error state`() = runTest {
         val viewModel = AreaViewModel(
             FakeRepository { throw CancellationException("navigated away") },
@@ -85,13 +97,13 @@ class AreaViewModelTest {
 
     @Test
     fun `retry puts the screen back into loading`() = runTest {
-        var result: AppResult<List<Area>> = AppResult.Failure(AppError.Network)
+        var result: AppResult<AreaDiscovery> = AppResult.Failure(AppError.Network)
         val viewModel = AreaViewModel(FakeRepository { result })
 
         advanceUntilIdle()
         assertEquals(UiState.Error(AppError.Network), viewModel.uiState.value)
 
-        val areas = listOf(Area(name = "Italian", country = "Italy"))
+        val areas = AreaDiscovery(listOf(Area(name = "Italian", country = "Italy")), false)
         result = AppResult.Success(areas)
         viewModel.load()
 

@@ -3,8 +3,9 @@ package com.example.mealcase.feature.areas
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mealcase.core.common.AppResult
+import com.example.mealcase.core.common.AppError
 import com.example.mealcase.core.data.MealRepository
-import com.example.mealcase.core.model.Area
+import com.example.mealcase.core.model.AreaDiscovery
 import com.example.mealcase.core.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +19,8 @@ class AreaViewModel(
 
     // A one-shot request, so a plain MutableStateFlow. `stateIn` earns its keep when an
     // existing cold stream needs sharing; here it would only add a SharingStarted debate.
-    private val _uiState = MutableStateFlow<UiState<List<Area>>>(UiState.Loading)
-    val uiState: StateFlow<UiState<List<Area>>> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<AreaDiscovery>>(UiState.Loading)
+    val uiState: StateFlow<UiState<AreaDiscovery>> = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
 
@@ -37,7 +38,9 @@ class AreaViewModel(
             // Used as an expression, so the compiler enforces exhaustiveness: adding a
             // variant to AppResult becomes a build error here rather than a silent branch.
             _uiState.value = when (val result = repository.getAreas()) {
-                is AppResult.Success -> UiState.Success(result.value)
+                is AppResult.Success ->
+                    if (result.value.areas.isEmpty()) UiState.Error(AppError.Server)
+                    else UiState.Success(result.value)
                 is AppResult.Failure -> UiState.Error(result.error)
             }
         }

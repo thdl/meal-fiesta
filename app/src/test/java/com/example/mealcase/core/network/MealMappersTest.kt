@@ -6,8 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The ingredient flattening is the only real logic in the app, so it is the thing worth
- * testing. Assertions are on *behaviour* — the count, the pairing, the discarding — rather
+ * Ingredient flattening is important mapping logic. Assertions are on *behaviour* —
+ * the count, the pairing, the discarding — rather
  * than on a copied list of all fifteen names, so the test survives TheMealDB editing a
  * recipe's wording upstream.
  */

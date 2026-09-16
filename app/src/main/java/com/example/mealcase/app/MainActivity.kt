@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MealCaseTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AppNavigation()
+                    AppNavigation((application as MealCaseApplication).container.mealRepository)
                 }
             }
         }

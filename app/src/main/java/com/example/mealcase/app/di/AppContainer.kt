@@ -35,7 +35,9 @@ class AppContainer {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(
                         HttpLoggingInterceptor().apply {
-                            level = HttpLoggingInterceptor.Level.BODY
+                            // First-letter discovery returns full recipe bodies; avoid dumping
+                            // megabytes of upstream data into Logcat during every cold start.
+                            level = HttpLoggingInterceptor.Level.BASIC
                         },
                     )
                 }

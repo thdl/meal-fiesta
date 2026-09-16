@@ -18,12 +18,18 @@ import kotlinx.coroutines.launch
 class MealListViewModel(
     private val repository: MealRepository,
     private val areaName: String,
+    private val areaQuery: String = areaName,
 ) : ViewModel() {
 
     constructor(
         repository: MealRepository,
         savedStateHandle: SavedStateHandle,
-    ) : this(repository, savedStateHandle.toRoute<MealsRoute>().areaName)
+    ) : this(repository, savedStateHandle.toRoute<MealsRoute>())
+
+    private constructor(
+        repository: MealRepository,
+        route: MealsRoute,
+    ) : this(repository, route.areaName, route.areaQuery)
 
     private val _uiState = MutableStateFlow<UiState<List<MealSummary>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<MealSummary>>> = _uiState.asStateFlow()
@@ -40,9 +46,8 @@ class MealListViewModel(
         loadJob?.cancel()
         _uiState.value = UiState.Loading
         loadJob = viewModelScope.launch {
-            _uiState.value = when (val result = repository.getMeals(areaName)) {
-                // The only screen with a genuine empty state: most of the ~195 cuisines the
-                // API lists have no meals attached, and that is an answer, not a failure.
+            _uiState.value = when (val result = repository.getMeals(areaQuery)) {
+                // Keep a real empty state for incomplete or changing upstream data.
                 is AppResult.Success ->
                     if (result.value.isEmpty()) UiState.Empty else UiState.Success(result.value)
 

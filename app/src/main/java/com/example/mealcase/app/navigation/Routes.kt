@@ -13,7 +13,10 @@ import kotlinx.serialization.Serializable
 data object AreasRoute
 
 @Serializable
-data class MealsRoute(val areaName: String)
+data class MealsRoute(
+    val areaName: String,
+    val areaQuery: String = areaName,
+)
 
 @Serializable
 data class MealDetailRoute(val mealId: String)
